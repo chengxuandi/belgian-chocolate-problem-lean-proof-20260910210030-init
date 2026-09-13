@@ -1,0 +1,4 @@
+import BCPThreshold.CoarseSchottky
+
+#print axioms BelgianChocolate.CoarseSchottky.deriv_sub_center_bound
+#print axioms BelgianChocolate.CoarseSchottky.local_image_disc_of_deriv_bound

@@ -1,0 +1,5 @@
+import BCPThreshold.EndpointFormalization
+
+#print axioms BelgianChocolate.polynomialFeasible_strict_improvement
+#print axioms BelgianChocolate.endpoint_not_polynomialFeasible
+#print axioms BelgianChocolate.endpoint_separation

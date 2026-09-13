@@ -1,0 +1,14 @@
+import BCPThreshold.FinitePositiveBridge
+import BCPThreshold.RCFRoute1.TrueHierarchy
+
+open BelgianChocolate
+
+#print axioms PositiveVerifier.noRootAtDepth_sound
+#print axioms PositiveVerifier.noRootAtDepth_complete
+#print axioms FinitePositiveVerifier.positive_sound
+#print axioms FinitePositiveVerifier.positive_complete
+#print axioms finiteCertificate_positiveCertificate
+#print axioms executable_positive_sound
+#print axioms executable_positive_complete
+#print axioms Route1.TrueHierarchy.H_iff_equationSystem
+#print axioms Route1.TrueHierarchy.hierarchyNegative_complete

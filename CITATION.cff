@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use or discuss this work, please cite this repository and release."
+title: "An Exact Algorithmic Solution of the Belgian Chocolate Problem"
+type: software
+authors:
+  - family-names: Cheng
+    given-names: Xuandi
+repository-code: "https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init"
+url: "https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init/releases/tag/v1.0.0-proof-candidate"
+version: "v1.0.0-proof-candidate"
+date-released: 2026-09-13
+license: Apache-2.0
+abstract: "A proof candidate with a concrete Lean 4 main theorem, strict endpoint separation, and certified arbitrary-precision threshold enclosures. Independent verification is requested."

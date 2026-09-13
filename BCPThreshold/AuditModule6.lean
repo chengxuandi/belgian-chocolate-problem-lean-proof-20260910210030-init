@@ -1,0 +1,4 @@
+import BCPThreshold.AllOrdersRealization
+
+#print axioms BelgianChocolate.Route1.AllOrders.allOrders_realization
+#print axioms BelgianChocolate.Route1.AllOrders.analyticFeasible_iff_allOrders

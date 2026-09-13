@@ -1,0 +1,13 @@
+.lake/
+tmp/
+__pycache__/
+*.pyc
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+.env
+.env.*

@@ -1,0 +1,918 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=25mm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb,amsthm,array,url,xcolor}
+\usepackage[colorlinks=true,allcolors=inkblue,breaklinks=true]{hyperref}
+\definecolor{inkblue}{RGB}{28,53,79}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}\newtheorem{remark}[theorem]{Remark}
+\newcommand{\D}{\mathbb D}\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}\newcommand{\Qrat}{\mathbb Q}
+\newcommand{\Adm}{\mathcal A}\newcommand{\F}{\mathcal F}
+\newcommand{\T}{\mathcal T}\newcommand{\Kc}{\mathcal K}
+\newcommand{\norm}[1]{\left\|#1\right\|_{\overline\D}}
+\newcommand{\idzero}[1]{\mathbf1_{#1=0}}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{2em}
+\pagestyle{myheadings}\markright{An exact algorithmic solution of the Belgian Chocolate Problem}
+\title{\color{inkblue}An Exact Algorithmic Solution\newline of the Belgian Chocolate Problem}
+\author{Xuandi Cheng}\date{Proof candidate v1.0.0 --- 13 September 2026}
+\begin{document}\maketitle
+\begin{abstract}
+For $\delta>0$, the Belgian Chocolate Problem asks for nonzero real Hurwitz
+stable polynomials $x,y,p$ with $\deg x\geq\deg y$ and
+$p=(s^2-2\delta s+1)x+(s^2-1)y$. We specify an exact algorithm that
+computes a critical real $Q$ by strict rational enclosures of any prescribed
+precision and prove that the original admissible set is
+$(0,(1-Q)/(1+Q))$. The analytic parameter set includes its endpoint $Q$,
+but the strict polynomial parameter set does not. The proof combines
+explicit uniform bounds for four analytic factors, a finite semialgebraic
+hierarchy with an all-orders realization theorem, finite certificates on
+both strict sides, and a two-test-point terminating subdivision algorithm.
+Finite polynomial realization uses strict parameter slack; endpoint
+exclusion uses an explicit polynomial perturbation that preserves actual
+degrees even in the presence of leading-term cancellation. No degree bound,
+closed-form value, or practical complexity estimate is assumed.
+\end{abstract}
+
+\section{Introduction}
+This is a proof candidate submitted for independent verification, not a claim
+of acceptance by the control-theory or complex-analysis communities.
+The accompanying repository contains a kernel-checked concrete Lean main theorem;
+its precise scope and its differences in proof implementation are stated in
+Section~\ref{sec:formalcoverage}.
+The problem considered here is the original polynomial simultaneous-
+stabilization problem stated in Section~\ref{sec:original}. Its quantifiers
+range over all finite degrees, and stability is strict. We determine its
+entire admissible parameter set by specifying a real number through a
+total certified approximation algorithm and proving the exact interval
+criterion, including the excluded endpoint.
+
+The proof distinguishes two issues. Open-disc analytic feasibility is
+closed at its lower threshold; strictly stable polynomial feasibility is
+open there. The analytic hierarchy therefore cannot be identified
+pointwise with original polynomial feasibility at the threshold. The
+precise interface is proved in Sections~\ref{sec:endpoint}--\ref{sec:return}.
+
+The algorithm uses only integer and rational arithmetic, finite polynomial
+enumeration, and effective real-algebraic decisions. Its output defines
+the threshold independently of a feasibility query for the original
+problem. Theorem~\ref{thm:main} is the final combined statement.
+
+\section{Original simultaneous-stabilization problem}\label{sec:original}
+\begin{definition}\label{def:original}
+A nonzero $h\in\R[s]$ is \emph{Hurwitz stable} if every complex zero
+$\lambda$ satisfies $\operatorname{Re}\lambda<0$. Nonzero constants are
+stable. Put $a_\delta(s)=s^2-2\delta s+1$ and $b(s)=s^2-1$. Define
+\begin{equation}\label{eq:original}
+\Adm=\left\{\delta>0:\begin{array}{l}
+ x,y,p\in\R[s]\setminus\{0\}\text{ are stable},\quad\deg x\geq\deg y,\\
+ p=a_\delta x+by
+\end{array}\right\}.
+\end{equation}
+The symbol $p$ denotes the third polynomial; $z$ will denote a disc variable.
+\end{definition}
+There is no leading-coefficient sign or monic normalization. The actual
+degree of $p$ can be smaller than $\deg x+2$.
+
+\begin{lemma}\label{lem:belowone}
+If $\delta\in\Adm$, then $0<\delta<1$.
+\end{lemma}
+\begin{proof}
+At $\delta=1$, evaluating the identity at $s=1$ gives $p(1)=0$.
+For $\delta>1$, the roots $r_\pm=\delta\pm\sqrt{\delta^2-1}$ of
+$a_\delta$ satisfy $0<r_-<1<r_+$. Evaluation gives
+$p(r_\pm)/y(r_\pm)=r_\pm^2-1$, with opposite signs. But $p/y$ is a
+continuous nonzero real function on $(0,\infty)$, so it has constant sign.
+Both cases contradict stability.
+\end{proof}
+
+\begin{lemma}[Parameter change]\label{lem:parameters}
+On $I=(0,1)$ the maps
+\begin{equation}\label{eq:parameters}
+ q(\delta)=\frac{1-\delta}{1+\delta},\qquad
+ \delta(q)=\frac{1-q}{1+q}
+\end{equation}
+are mutually inverse strictly decreasing bijections.
+\end{lemma}
+\begin{proof}
+Substitution gives the inverse identities. Each map takes $I$ to $I$
+and has derivative $-2/(1+x)^2<0$.
+\end{proof}
+Write $P(q)$ for $\delta(q)\in\Adm$, for $q\in I$.
+
+
+\begin{theorem}[Main result, stated in advance]\label{thm:front}
+There is a critical real $Q\in(0,1/2)$ and a certified algorithm which, for every
+$m\in\mathbb N$, terminates and returns $L,R\in\Qrat$ with
+\[
+ L<Q<R,\qquad R-L<2^{-m}.
+\]
+With $\Delta=(1-Q)/(1+Q)$, the original set is $\Adm=(0,\Delta)$ and
+$\Delta\notin\Adm$. For the analytic predicate defined in the next section,
+on $0<q<1$ one has $A(q)\Longleftrightarrow Q\le q$ and
+$P(q)\Longleftrightarrow Q<q$. In particular $A(Q)$ holds but $P(Q)$ does not.
+\end{theorem}
+\begin{proof}
+This is the principal assertion of Theorem~\ref{thm:main}, proved below.
+The algorithm specifying $Q$ is given in Section~\ref{sec:algorithm}.
+\end{proof}
+
+\section{Analytic reformulation}\label{sec:analytic}
+Let $\D=\{z\in\C:|z|<1\}$. For $0<t<1$, let $\F_t$ consist of
+holomorphic $f:\D\to\C$ such that $f(\overline z)=\overline{f(z)}$,
+the only zero is the simple zero $0$, and the only $1$-points are
+the two simple points $it,-it$. Put
+\[
+ A(q):\ \F_{\sqrt q}\ne\varnothing,\qquad
+ \T=\{q\in I:A(q)\},\qquad q_* =\inf\T.
+\]
+Nonemptiness and a positive lower bound for $\T$ are proved below.
+The symbol $q_*$ is used in proofs, not in the algorithm's instructions.
+
+\begin{lemma}[Polynomial-to-analytic map]\label{lem:forward}
+For every $q\in I$, $P(q)$ implies $A(q)$.
+\end{lemma}
+\begin{proof}
+For a polynomial witness put
+\[
+ w=\frac{s-1}{s+1},\qquad s=\frac{1+w}{1-w},\qquad
+ f(w)=\frac{b(s)y(s)}{p(s)}.
+\]
+The second map is a biholomorphism from $\D$ onto the right half-plane.
+Direct algebra gives
+\begin{equation}\label{eq:cayley}
+ (s+1)^2w=b(s),\qquad
+ (s+1)^2(w^2+q)=(1+q)a_{\delta(q)}(s).
+\end{equation}
+Stability makes $f$ holomorphic, real symmetric, and gives
+$1-f=a_{\delta(q)}x/p$. The only right-half-plane zero of $b$ is the
+simple zero $1$, corresponding to $w=0$. The two distinct roots
+$\delta\pm i\sqrt{1-\delta^2}$ of $a_\delta$ are in that half-plane
+and correspond to $w=\pm i\sqrt q$. Neither $x,y$ nor $p$ has a zero
+there. The change of variable has nonzero derivative, so the specified
+fibres remain simple and there are no additional fibres. The boundary
+point $w=1$ is not used; no assertion about $\deg p$ is needed.
+\end{proof}
+
+\begin{lemma}[Four-factor representation]\label{lem:factors}
+For $q\in I$, $A(q)$ is equivalent to the existence of four
+real-symmetric holomorphic functions $u,v,U,V$ on $\D$ satisfying
+\begin{equation}\label{eq:factors}
+ zu+(z^2+q)v=1,\qquad uU=1,\qquad vV=1.
+\end{equation}
+\end{lemma}
+\begin{proof}
+From $f$ take $u=f/z$, $v=(1-f)/(z^2+q)$, $U=1/u$, $V=1/v$.
+The quotients have removable singularities at the specified points;
+the exact simple fibres make them nonvanishing everywhere on $\D$.
+Conversely let $f=zu$. The inverse identities make $u,v$ nonvanishing.
+Thus $f$ has just the simple zero $0$, and
+$1-f=(z^2+q)v$ has exactly the two specified simple zeros. Symmetry is
+preserved in both directions, equivalently all Taylor coefficients are real.
+\end{proof}
+
+\section{Uniform bounds and effective coefficient boxes}\label{sec:bounds}
+\subsection{Classical analytic inputs}
+Poincar\'e densities are normalized to curvature $-1$, so
+$\rho_\D(z)=2/(1-|z|^2)$. We use the following standard theorems in
+the indicated forms.
+\begin{description}
+\item[Schwarz--Pick.]
+If $h:G\to H$ is holomorphic between hyperbolic plane domains, then
+$\rho_H(h(z))|h'(z)|\leq\rho_G(z)$.
+\item[Schottky--Hempel density estimate.]
+For $Y=\C\setminus\{0,1\}$,
+\[
+ \rho_Y(w)\geq\frac1{2|w|(C+|\log|w||)},\qquad
+ C=\frac{\Gamma(1/4)^4}{4\pi^2}.
+\]
+This is the weakened form of the usual estimate in this normalization.
+The Gamma integral gives
+$\Gamma(1/4)<4+e^{-1}<5$. Since $\pi>3$, $C<625/36<18<64$, and hence
+\begin{equation}\label{eq:density}
+ \rho_Y(w)\geq\frac1{2|w|(64+|\log|w||)}.
+\end{equation}
+\item[Maximum modulus, argument principle, and Cauchy estimate.]
+For a function holomorphic near a closed disc, its maximum modulus is
+bounded by its boundary maximum. If it has no boundary zero, the image
+boundary's winding number about zero equals the number of interior zeros,
+with multiplicity. A boundary bound $M$ at radius $r$ gives Taylor
+coefficient bound $Mr^{-j}$.
+\item[Gronwall.]
+If $a\geq0$ is absolutely continuous on $[0,\ell]$ and
+$a'\leq ba$ almost everywhere, with $b$ integrable, then
+$a(s)\leq a(0)\exp(\int_0^s b(\tau)\,d\tau)$.
+\end{description}
+The density estimate and Schwarz--Pick apply to arbitrary holomorphic
+maps omitting $0,1$; no covering or local-univalence condition is imposed.
+
+\subsection{An explicit all-functions bound}
+Fix $\beta=3/4$. For rational $0\leq r<1$, define
+\begin{equation}\label{eq:bounddata}
+\begin{split}
+ R&=\frac{1+\max\{r,\beta\}}2,\qquad
+ d=\tfrac12\min\{R-\beta,1-R\},\\
+ J&=\left\lceil16R/d\right\rceil+1,\qquad B=3^{66\cdot9^J},\\
+ M(r)&=\left\lceil B\left(\frac1R+\frac1{R^2-\beta^2}
+                         +R+R^2+\beta^2\right)\right\rceil.
+\end{split}
+\end{equation}
+All denominators are positive and these are effective rational or integer
+data, independent of $q_*$ and of all function degrees.
+
+\begin{lemma}[Uniform four-factor bound]\label{lem:uniform}
+For $0<t\leq\beta$, $f\in\F_t$, and its four factors,
+\begin{equation}\label{eq:uniform}
+ \max\{|u(z)|,|v(z)|,|U(z)|,|V(z)|\}\leq M(r)
+ \qquad(|z|\leq r).
+\end{equation}
+\end{lemma}
+\begin{proof}
+On the circle $\gamma(\theta)=Re^{i\theta}$ the image $f\circ\gamma$
+has winding numbers $1,2$ about $0,1$, respectively. It meets
+\[
+ K=\{w:1/4\leq|w|\leq2,\ |w-1|\geq1/4\}.
+\]
+Otherwise its connected image lies in one of the three disjoint regions
+$|w|<1/4$, $|w-1|<1/4$, $|w|>2$. The first two force one winding
+number to vanish. In the third the winding numbers about $0,1$ agree,
+since the segment $[0,1]$ avoids the curve. Each is a contradiction.
+Thus some $z_0$ on the circle satisfies
+\begin{equation}\label{eq:anchor}
+ 1/4\leq|f(z_0)|\leq4,\qquad 1/4\leq|1-f(z_0)|\leq4.
+\end{equation}
+
+For every center $c$ on this circle, the disc of radius $d$ is contained
+in $\D\setminus\{0,it,-it\}$: all deleted points and the unit boundary
+are at distance at least $2d$. There $h=f$ and $h=1-f$ both omit $0,1$.
+Schwarz--Pick and~\eqref{eq:density} give
+\[
+ \frac{|h'(z)|}{|h(z)|}
+ \leq2(64+|\log|h(z)||)\frac{2d}{d^2-|z-c|^2}.
+\]
+Along a radial segment of length at most $d/2$, $|\log|h||$ is
+absolutely continuous. The derivative inequality and Gronwall imply
+\begin{equation}\label{eq:propagation}
+ 64+|\log|h(z)||\leq9(64+|\log|h(c)||),
+ \qquad |z-c|\leq d/2,
+\end{equation}
+because
+$\exp(2\int_0^{d/2}2d/(d^2-s^2)\,ds)=\exp(2\log3)=9$.
+The circumference $2\pi R<8R$ can be traversed from $z_0$ in at most
+$J$ steps of chord length at most $d/2$. Applying~\eqref{eq:propagation}
+at their successive centers, using $\log4<2$ and $e<3$, yields
+\[
+ |f|,\ |1/f|,\ |1-f|,\ |1/(1-f)|\leq B\quad(|z|=R).
+\]
+Since $|z^2+t^2|\geq R^2-\beta^2$ there, the respective factor bounds
+on this circle are
+\begin{equation}\label{eq:fourbounds}
+ B/R,\quad B/(R^2-\beta^2),\quad RB,\quad(R^2+\beta^2)B.
+\end{equation}
+All four factors are holomorphic on the entire disc. Apply the maximum
+modulus principle separately and use their sum in~\eqref{eq:bounddata}.
+\end{proof}
+
+\subsection{Rational coefficient boxes}
+For $m\geq1$ and $j\geq0$, put
+\begin{equation}\label{eq:boxes}
+ r_m=1-2^{-m},\qquad M_m=\max\{1,M(r_m)\},\qquad
+ C_j=\min_{1\leq m\leq j+1}M_m r_m^{-j}.
+\end{equation}
+\begin{lemma}[Coefficient bounds and growth]\label{lem:coeff}
+Each of the four Taylor coefficients at index $j$ has absolute value
+at most $C_j$, for every $0<t\leq\beta$ and $f\in\F_t$. Moreover
+\begin{equation}\label{eq:growth}
+ \limsup_{j\to\infty}C_j^{1/j}\leq1.
+\end{equation}
+\end{lemma}
+\begin{proof}
+Cauchy's estimate gives each bound $M_m r_m^{-j}$ and hence their finite
+minimum. For fixed $m$, $C_j\leq M_mr_m^{-j}$ when $j\geq m-1$.
+The upper root growth is at most $r_m^{-1}$. Let $m\to\infty$.
+\end{proof}
+In particular every coefficient sequence in these boxes, not just one
+already known to arise from a feasible function, defines a holomorphic
+power series on $\D$.
+
+\section{Finite semialgebraic hierarchy}\label{sec:hierarchy}
+\begin{definition}\label{def:hierarchy}
+For $q\in[0,9/16]$ and $N\geq0$, $H_N(q)$ is feasibility of the
+following system in $4(N+1)$ real variables
+$(u_j,v_j,U_j,V_j)_{0\leq j\leq N}$:
+\begin{align}
+ |u_j|,|v_j|,|U_j|,|V_j|&\leq C_j\quad(0\leq j\leq N),\label{eq:Hbox}\\
+ u_{k-1}+v_{k-2}+qv_k&=\idzero{k}\quad(0\leq k\leq N),\label{eq:Hlinear}\\
+ \sum_{i=0}^k u_iU_{k-i}=\sum_{i=0}^k v_iV_{k-i}
+ &=\idzero{k}\quad(0\leq k\leq N).\label{eq:Hproduct}
+\end{align}
+Negative indices mean zero, and $\idzero{k}$ is one if $k=0$ and zero
+otherwise. Absolute-value bounds mean the two corresponding linear
+inequalities. No constraint is imposed on an infinite tail by this definition.
+\end{definition}
+
+\begin{proposition}[Finite exact decisions]\label{prop:decide}
+For rational $q$ in the defined range, $H_N(q)$ is a finite rational
+semialgebraic feasibility question, decidable by a terminating exact
+procedure. Restricting a solution at level $N+1$ gives one at level $N$.
+Also $H_0(0)$ is infeasible.
+\end{proposition}
+\begin{proof}
+The data $C_j$ are rational, and all displayed constraints are polynomial
+equalities or inequalities in finitely many variables. Effective
+quantifier elimination for real closed fields decides such formulas.
+Restriction retains precisely the lower-index equations. At $q=0$ the
+zeroth linear equation is $0=1$.
+\end{proof}
+We use the standard effective real-algebraic theorem in its algorithmic
+form: a fixed exact implementation, for example cylindrical algebraic
+decomposition with real-root isolation, terminates and correctly decides
+each finite rational first-order real-closed-field sentence. Merely a
+nonconstructive choice of a truth value is not the algorithm used here.
+
+\section{All-orders realization and the analytic threshold}\label{sec:realization}
+\begin{theorem}[All-orders equivalence]\label{thm:allorders}
+For $0<q\leq9/16$,
+\begin{equation}\label{eq:allorders}
+ A(q)\quad\Longleftrightarrow\quad\forall N\geq0\ H_N(q).
+\end{equation}
+\end{theorem}
+\begin{proof}
+Necessity follows from Lemmas~\ref{lem:factors} and~\ref{lem:coeff}.
+For sufficiency take the compact product
+\[
+ \Kc=\prod_{j=0}^{\infty}[-C_j,C_j]^4.
+\]
+Countable products of compact intervals are compact in the coordinate
+topology. Let $E_N(q)$ be the subset imposing only equations
+\eqref{eq:Hlinear}--\eqref{eq:Hproduct} through index $N$. These are
+closed cylinder sets, because each equation is continuous in finitely
+many coordinates, and $E_{N+1}(q)\subseteq E_N(q)$. A finite feasible
+solution, with all remaining coordinates set to zero, proves
+$E_N(q)\ne\varnothing$. This extension is used only for nonemptiness
+of that cylinder, not to satisfy higher equations.
+
+The nested compact-set theorem gives a common infinite coefficient
+object in $\bigcap_NE_N(q)$. By~\eqref{eq:growth} its four power series
+converge absolutely on $\D$, locally uniformly, and are holomorphic
+there. Cauchy products recover~\eqref{eq:factors} coefficient by
+coefficient. In particular $uU=vV=1$ gives exact nonvanishing, rather
+than a limiting non-strict inequality. Lemma~\ref{lem:factors} recovers
+the simple fibres and real symmetry, and proves $A(q)$.
+\end{proof}
+No surjectivity of projections between feasible solution spaces is used.
+The finite solutions are not chosen greedily to be compatible.
+
+\begin{lemma}[Explicit strict seed]\label{lem:seed}
+There are real rational polynomial factors at $q=1/2$ that are zero-free
+on $\overline\D$. Consequently $\T$ is nonempty and $q_*<1/2$.
+\end{lemma}
+\begin{proof}
+Take
+\[
+ u=-\frac{1000}{1089}(1+\tfrac45z)^2(1+\tfrac{17}{20}z),\qquad
+ v=\frac2{1089}(1089+1000z+272z^2).
+\]
+Expanding $u=-(1000+2450z+2000z^2+544z^3)/1089$ verifies
+$zu+(z^2+1/2)v=1$. The roots of $u$ are $-5/4,-20/17$.
+The discriminant for $v$ is $-184832<0$, and its conjugate roots have
+modulus $\sqrt{1089/272}>1$. Both polynomials remain nonvanishing on
+some disc $|z|<R$ with $R>1$. For $f=zu$, $f(Rz)$ then belongs to
+$\F_{\sqrt{1/2}/R}$, establishing a feasible parameter below $1/2$.
+\end{proof}
+
+\begin{lemma}[Scaling with strict slack]\label{lem:scale}
+If $0<r<q<1$ and $A(r)$, then $A(q)$. In fact there are real-symmetric
+holomorphic nonvanishing factors $u,v$ on $|z|<\sqrt{q/r}>1$ satisfying
+$zu+(z^2+q)v=1$ there.
+\end{lemma}
+\begin{proof}
+Take $f_0\in\F_{\sqrt r}$, $c=\sqrt{r/q}$, and $F(z)=f_0(cz)$.
+On $|z|<1/c$ this has exactly the simple zero $0$ and the simple
+$1$-points $\pm i\sqrt q$. The quotients $F/z$ and
+$(1-F)/(z^2+q)$ are holomorphic nonvanishing factors on that disc.
+\end{proof}
+
+\begin{theorem}[Attained analytic threshold]\label{thm:analyticinterval}
+\begin{equation}\label{eq:analyticinterval}
+ 0<q_*<1/2,\qquad \T=[q_*,1).
+\end{equation}
+\end{theorem}
+\begin{proof}
+The strict seed gives nonemptiness and the upper bound. At a feasible
+$0<q\leq9/16$, the zeroth identity and box give
+$qv_0=1$, $|v_0|\leq C_0$, and hence $q\geq1/C_0$.
+A sequence of feasible parameters tending to the infimum can be chosen
+eventually below $1/2$. Thus $q_*\geq1/C_0>0$.
+Scaling proves upward closure, and the defining property of the infimum
+then puts every $q>q_*$ in $\T$.
+
+Choose feasible $q_n\to q_*$ eventually in $(0,1/2)$. Their four
+coefficient sequences lie in the common compact metrizable space $\Kc$.
+In $[0,1/2]\times\Kc$ take a convergent subsequence. Its parameter is
+$q_*$; every finite coefficient equation passes to the limit by
+continuity. The power-series construction in the proof of
+Theorem~\ref{thm:allorders} gives four factors at $q_*$. Since $q_*>0$,
+the two $1$-points stay distinct. Lemma~\ref{lem:factors} gives $A(q_*)$.
+\end{proof}
+
+\section{Finite certificates on both strict sides}\label{sec:certificates}
+\begin{corollary}[Finite obstruction]\label{cor:negative}
+For $0<q\leq9/16$, $q<q_*$ if and only if some $H_N(q)$ is infeasible.
+For rational $q$ this is a finite, exact all-degrees obstruction.
+\end{corollary}
+\begin{proof}
+Negate~\eqref{eq:allorders} and use~\eqref{eq:analyticinterval}.
+For rational $q$, apply Proposition~\ref{prop:decide}. By
+Lemma~\ref{lem:forward}, analytic impossibility also excludes any original
+polynomial witness.
+\end{proof}
+
+\begin{definition}[Positive certificate]\label{def:positive}
+For rational $q>0$, a positive certificate is $v\in\Qrat[z]$ with
+$v(0)=1/q$ for which
+\begin{equation}\label{eq:certificate}
+ u(z)=\frac{1-(z^2+q)v(z)}z
+\end{equation}
+and $v$ are zero-free on $\overline\D$. The constant condition makes
+$u$ a rational polynomial and the factor identity exact.
+\end{definition}
+This is decidable by real algebra: for $h\in\Qrat[z]$, write
+$h(a+ib)=H_1(a,b)+iH_2(a,b)$. Closed-disc nonvanishing is
+\[
+ \neg\exists a,b\in\R:\ a^2+b^2\leq1,\ H_1(a,b)=H_2(a,b)=0.
+\]
+It contains only finite rational polynomial conditions.
+
+\begin{lemma}[Exact polynomial approximation]\label{lem:approx}
+If $0<r<q<1$ and $A(r)$, there are real polynomials $u_*,v_*$,
+zero-free on $\overline\D$, with $zu_*+(z^2+q)v_*=1$.
+When $q$ is rational they can be chosen rational.
+\end{lemma}
+\begin{proof}
+Use the larger-disc factors from Lemma~\ref{lem:scale}. Their minimum
+moduli $m_u,m_v$ on $\overline\D$ are positive. Choose
+$0<\eta<\frac12\min\{m_v,m_u/(1+q)\}$. Taylor truncation approximates
+$v$ within $\eta/2$ on $\overline\D$. For rational $q$, approximate
+its finitely many nonconstant real coefficients by rationals with sum
+of errors less than $\eta/2$, retaining $v_*(0)=1/q$ exactly. For real
+$q$, retain the real Taylor polynomial. In either case
+$\norm{v_*-v}<\eta$. Define $u_*$ by~\eqref{eq:certificate}, not by
+independent approximation. Its numerator vanishes at zero. On $|z|=1$,
+$|u_*-u|\leq(1+q)\norm{v_*-v}$. The difference is holomorphic at zero,
+so the maximum modulus theorem gives this bound throughout the disc.
+Both resulting polynomials therefore have positive minimum modulus.
+The identity, symmetry, and rationality assertions are exact.
+\end{proof}
+The margins here depend on the individual strict pair $r<q$; no uniform
+estimate as $q\downarrow q_*$ is used. The existence proof does not
+require an algorithm to recover $f_0$ or its minimum moduli.
+
+\begin{theorem}[Positive-certificate characterization]\label{thm:positive}
+For rational $0<q\leq1/2$, a positive certificate exists if and only
+if $q>q_*$.
+\end{theorem}
+\begin{proof}
+Given a certificate, its two polynomial factors are nonvanishing on
+some disc of radius $R>1$. Rescaling $f=zu$ to $f(Rz)$ gives
+$A(q/R^2)$, and hence $q_*\leq q/R^2<q$.
+Conversely for $q>q_*$ choose $r\in[q_*,q)$ with $A(r)$ and apply
+Lemma~\ref{lem:approx}. The same existence argument works for every
+real $q\in(q_*,1)$, requiring rational coefficients only when $q$ is
+rational.
+\end{proof}
+
+\section{Certified computation of the critical real}\label{sec:algorithm}
+Fix one deterministic exact real-closed-field decision implementation
+as in Proposition~\ref{prop:decide}. For $s\geq0$, let $\mathcal E_s(q)$
+be the finite list of rational polynomials of degree at most $s$, constant
+term $1/q$, and other coefficients in
+\[
+ \{a/b:a\in\mathbb Z,\ |a|\leq s,\ 1\leq b\leq\max\{1,s\}\}.
+\]
+Order by actual degree, then increasing lexicographic order of rational
+coefficient tuples, removing duplicates. Every rational polynomial
+with that constant term occurs for some finite $s$.
+
+Start at $[L_0,R_0]=[0,1/2]$, which strictly brackets $q_*$ by
+Theorem~\ref{thm:analyticinterval}. Given a current bracket $[L,R]$, put
+$a=(2L+R)/3$ and $b=(L+2R)/3$ and execute the following staged search.
+\begin{quote}\ttfamily\small
+for s = 0, 1, 2, ...:\\
+\quad 1. Decide H\_s(a); if infeasible, return [a,R].\\
+\quad 2. Decide H\_s(b); if infeasible, return [b,R].\\
+\quad 3. Test E\_s(a) in its fixed order;\\
+\qquad\ if a positive certificate is found, return [L,a].\\
+\quad 4. Test E\_s(b) in its fixed order;\\
+\qquad\ if a positive certificate is found, return [L,b].
+\end{quote}
+This implements parallel search by fair finite stages. Each stage
+contains only finitely many terminating decisions.
+
+\begin{theorem}[Total subdivision]\label{thm:step}
+For rational $0\leq L<q_*<R\leq1/2$, the search terminates. Its output
+is a nested strict bracket of $q_*$, with width at most $2(R-L)/3$.
+\end{theorem}
+\begin{proof}
+The tests $a,b$ are distinct positive rationals below $1/2$, so at most
+one equals $q_*$. The other has either a finite negative certificate
+by Corollary~\ref{cor:negative}, or a finite positive certificate by
+Theorem~\ref{thm:positive}. Exhaustiveness of the lists and the finite
+staging ensure discovery at some finite stage. No earlier stage can
+run forever. Negative certificates only raise the lower endpoint to a
+point strictly below $q_*$. Positive certificates only lower the upper
+endpoint to a point strictly above $q_*$. The four possible widths are
+$2/3,1/3,1/3,2/3$ times the old width, respectively.
+\end{proof}
+
+\begin{theorem}[Algorithmic real and strict precision]\label{thm:Q}
+Iteration gives a fully specified sequence of nested rational brackets
+\begin{equation}\label{eq:brackets}
+ L_j<q_*<R_j,\qquad R_j-L_j\leq\tfrac12(2/3)^j.
+\end{equation}
+Each stage is computable in finite time. Define $Q$ to be the unique
+point of $\bigcap_j[L_j,R_j]$. Then $Q=q_*$. For each $m\geq0$ a
+terminating algorithm returns rational $L_m^{\rm prec},R_m^{\rm prec}$
+such that
+\begin{equation}\label{eq:precision}
+ L_m^{\rm prec}<Q<R_m^{\rm prec},\qquad
+ R_m^{\rm prec}-L_m^{\rm prec}<2^{-m}.
+\end{equation}
+\end{theorem}
+\begin{proof}
+Induction using Theorem~\ref{thm:step} proves~\eqref{eq:brackets}.
+Nested closed intervals with widths tending to zero have a unique common
+point; since each contains $q_*$, it is $q_*$. For a precision input $m$,
+choose the least $j$ with $\tfrac12(2/3)^j<2^{-m}$ by finite rational
+comparisons, and return $[L_j,R_j]$. The geometric decay guarantees
+termination of this index search, and every subdivision is terminating.
+\end{proof}
+The stage instructions use no $q_*$, $Q$, or original-feasibility oracle.
+Their correctness proof identifies the independently defined $Q$ with
+the analytic infimum. Fixing a different correct real-algebraic engine
+does not change that limiting real. Define
+\begin{equation}\label{eq:Delta}
+ \Delta=\frac{1-Q}{1+Q}.
+\end{equation}
+
+\section{Endpoint separation}\label{sec:endpoint}
+\begin{lemma}[Fixed actual degree stability]\label{lem:fixeddegree}
+For each nonzero stable $h$ of actual degree $d$, there exists
+$\tau_h>0$ such that every real polynomial $g$ of degree at most $d$
+whose coefficients differ from those of $h$ by less than $\tau_h$
+has degree exactly $d$ and is stable.
+\end{lemma}
+\begin{proof}
+For $d=0$, use $|h(0)|/2$. Otherwise take disjoint closed circular discs
+around the distinct roots, all in the open left half-plane. Let $\Gamma$
+be their boundaries and
+\[
+ \mu=\min_\Gamma|h|>0,\quad B_h=\sum_{j=0}^d\max_\Gamma|s|^j,
+ \quad\tau_h=\min\{|h_d|/2,\mu/(2B_h)\}.
+\]
+The leading coefficient stays nonzero, and $|g-h|<|h|$ on each circle.
+Rouch\'e's theorem, for holomorphic functions near each closed disc,
+preserves the number of enclosed zeros with multiplicity. These counts
+total $d$; the fixed degree leaves no other roots. Repeated roots are
+allowed.
+\end{proof}
+
+\begin{theorem}[Strict original-parameter perturbation]\label{thm:perturb}
+If $\delta\in\Adm$, some $\delta'\in\Adm$ satisfies
+$\delta<\delta'<1$, even when top coefficients of $a_\delta x+by$ cancel.
+\end{theorem}
+\begin{proof}
+By Lemma~\ref{lem:belowone}, $0<\delta<1$. Fix a witness and put
+$n=\deg x$, $m=\deg y\leq n$.
+If $m<n$, then $\deg p=n+2$ with leading coefficient that of $x$.
+Keep $x,y$ fixed and set $\delta'=\delta+e$,
+$p'=p-2esx$. The identity is exact and the degree remains $n+2$.
+If $M_x>0$ is the maximum absolute coefficient of $x$, any sufficiently
+small $0<e<\min\{(1-\delta)/2,\tau_p/(4M_x)\}$ works by
+Lemma~\ref{lem:fixeddegree}.
+
+If $m=n$, let $e>0$ and define
+\begin{equation}\label{eq:mixparams}
+ k=\sqrt{1+e^2+2e/\delta},\qquad
+ \delta'=\frac{k\delta}{1+\delta e},\qquad\phi(s)=ks-e.
+\end{equation}
+Use mixing coefficients
+\begin{equation}\label{eq:mixcoeff}
+\begin{aligned}
+ \alpha_e&=1+e^2+e(\delta+1/\delta),&\beta_e&=e^2+e/\delta,\\
+ \gamma_e&=e(1/\delta-\delta),&\theta_e&=1+e/\delta.
+\end{aligned}
+\end{equation}
+Comparison of quadratic coefficients gives
+\begin{equation}\label{eq:mixids}
+ a_\delta(\phi)=\alpha_e a_{\delta'}+\gamma_e b,
+ \qquad b(\phi)=\beta_e a_{\delta'}+\theta_e b.
+\end{equation}
+All coefficient checks are explicitly
+\[
+\begin{array}{lll}
+ \alpha_e+\gamma_e=k^2,&\alpha_e-\gamma_e=1+e^2+2\delta e,
+ &\alpha_e\delta'=k(\delta+e),\\
+ \beta_e+\theta_e=k^2,&\beta_e-\theta_e=e^2-1,
+ &\beta_e\delta'=ke.
+\end{array}
+\]
+Define
+\begin{equation}\label{eq:mixwitness}
+ X=\alpha_e x(\phi)+\beta_e y(\phi),\quad
+ Y=\gamma_e x(\phi)+\theta_e y(\phi),\quad P_1=p(\phi).
+\end{equation}
+Then $P_1=a_{\delta'}X+bY$ exactly. As $e\downarrow0$ the coefficients
+of $X,Y,P_1$ tend to those of $x,y,p$. For all $e$ the first two degrees
+are at most $n$; their leading coefficients tend to the original nonzero
+ones. The actual degree of $P_1=p(ks-e)$ is exactly $\deg p$, since
+$k>0$, regardless of how many leading terms have canceled originally.
+Apply Lemma~\ref{lem:fixeddegree} at degree bounds $n,n,\deg p$.
+For sufficiently small $e>0$ all three polynomials are stable, with
+$\deg X=\deg Y=n$. One may take $e=2^{-j}$ for any sufficiently large
+$j$ so that all three finite coefficient deviations are below their
+positive tolerances. Thus the perturbation is genuinely nonzero.
+
+Finally direct algebra gives
+\begin{equation}\label{eq:direction}
+ 1-(\delta')^2=\frac{1-\delta^2}{(1+\delta e)^2}.
+\end{equation}
+For $e>0$ this lies strictly between $0$ and $1-\delta^2$, so
+$\delta<\delta'<1$. Stability is asserted only for the small $e$
+chosen above. Real coefficients, actual degrees, and the original
+degree inequality are preserved without normalization.
+\end{proof}
+
+\begin{remark}[Why actual degree matters]
+At $\delta=1/2$, $x=s+3/2$, $y=-s-1/2$, $p=s/2+2$ form a stable
+witness with nominal degree three and actual degree one. Changing only
+$\delta$ to $1/2+e$ gives
+$-2es^2+(1/2-3e)s+2$, whose root product is $-1/e<0$ for $e>0$.
+It has a positive root. The composition in~\eqref{eq:mixwitness}
+preserves the actual degree instead; no root at infinity is disregarded.
+\end{remark}
+
+\begin{theorem}[Endpoint exclusion]\label{thm:endpoint}
+For $q\in I$, $P(q)$ implies $q>Q$. In particular $\neg P(Q)$.
+\end{theorem}
+\begin{proof}
+Perturb its original polynomial witness to $\delta'>\delta(q)$ by
+Theorem~\ref{thm:perturb}. The corresponding $q'$ lies strictly between
+$0$ and $q$. Lemma~\ref{lem:forward} gives $A(q')$, whence
+$Q=q_*\leq q'<q$. This is an actual polynomial perturbation before
+the infimum inequality is used, not an exclusion deduced from the
+definition of an infimum alone.
+\end{proof}
+
+\section{Return to original polynomials}\label{sec:return}
+\begin{lemma}[Cayley polynomial realization]\label{lem:lift}
+Let $q\in I$ and let real polynomials $u,v$ be zero-free on
+$\overline\D$, with $wu+(w^2+q)v=1$. Put $n=\max\{\deg u,\deg v\}$.
+Then
+\begin{equation}\label{eq:lift}
+ \begin{split}
+ x(s)&=(1+q)(s+1)^n v\left(\frac{s-1}{s+1}\right),\\
+ y(s)&=(s+1)^n u\left(\frac{s-1}{s+1}\right),\qquad
+ p(s)=(s+1)^{n+2}
+ \end{split}
+\end{equation}
+are nonzero real stable polynomials with $\deg x=\deg y=n$ and
+$p=a_{\delta(q)}x+by$. Rational input data give rational coefficients.
+\end{lemma}
+\begin{proof}
+For $h(w)=h_d\prod_{j=1}^d(w-\omega_j)$ with $d\leq n$,
+\begin{equation}\label{eq:rootlift}
+ (s+1)^n h\left(\frac{s-1}{s+1}\right)
+ =h_d(s+1)^{n-d}\prod_{j=1}^d((1-\omega_j)s-(1+\omega_j)).
+\end{equation}
+Zero-freeness gives $|\omega_j|>1$, so $\omega_j\ne1$ and
+\[
+ \operatorname{Re}\frac{1+\omega_j}{1-\omega_j}
+ =\frac{1-|\omega_j|^2}{|1-\omega_j|^2}<0.
+\]
+Any additional roots are $-1$. Empty products include constants.
+The coefficient of $s^n$ is $h(1)\ne0$, proving the actual degree $n$.
+Apply this to $u,v$ and use~\eqref{eq:cayley} to obtain
+\[
+ a_{\delta(q)}x+by=(s+1)^{n+2}((w^2+q)v+wu)=(s+1)^{n+2}.
+\]
+The equality, first computed for $s\ne-1$, holds as a polynomial
+identity. Denominator clearing uses only real, or rational, operations.
+\end{proof}
+
+\begin{theorem}[Off-endpoint realization]\label{thm:offendpoint}
+If $0<r<q<1$ and $A(r)$, then $P(q)$. Consequently every real
+$q\in(Q,1)$ is polynomial feasible, with a rational polynomial witness
+whenever $q$ is rational.
+\end{theorem}
+\begin{proof}
+Apply Lemma~\ref{lem:approx} and then Lemma~\ref{lem:lift}.
+For $q>Q$ take $r=Q$, using analytic attainment. No uniform estimate
+in $q-Q$ is needed. This applies on all of $I$, not just the range of
+the finite hierarchy.
+\end{proof}
+
+\section{Main theorem}\label{sec:main}
+\begin{theorem}[Exact algorithmic solution]\label{thm:main}
+The algorithm of Section~\ref{sec:algorithm} uniquely determines a real
+$Q\in(0,1/2)$ and terminates for every requested strict precision
+\eqref{eq:precision}. With $\Delta=(1-Q)/(1+Q)$, the original problem
+has exactly the admissible set
+\begin{equation}\label{eq:main}
+ \boxed{\Adm=(0,\Delta),\qquad \Delta\notin\Adm,\qquad1/3<\Delta<1.}
+\end{equation}
+For every $q\in(0,1)$ the two predicates are precisely
+\begin{equation}\label{eq:separation}
+ \boxed{A(q)\Longleftrightarrow q\geq Q,\qquad
+        P(q)\Longleftrightarrow q>Q.}
+\end{equation}
+Thus for $0<q\leq9/16$ the all-layer analytic equivalence remains valid
+including $Q$, but its polynomial counterpart is the strict-slack relation
+\begin{equation}\label{eq:slackhierarchy}
+ P(q)\Longleftrightarrow\exists r\in(0,q)\ A(r)
+ \Longleftrightarrow\exists r\in(0,q)\ \forall N\ H_N(r).
+\end{equation}
+The first equivalence in~\eqref{eq:slackhierarchy} holds on all of $I$.
+\end{theorem}
+\begin{proof}
+Theorem~\ref{thm:Q} proves the algorithmic assertions and identifies
+$Q=q_*$. Theorem~\ref{thm:analyticinterval} gives the first predicate
+in~\eqref{eq:separation}. Theorems~\ref{thm:endpoint} and
+\ref{thm:offendpoint} give the second. Lemma~\ref{lem:belowone} excludes
+$\delta\geq1$; the decreasing inverse change of parameter gives
+$q(\delta)>Q$ exactly when $0<\delta<\Delta$. The bounds on $\Delta$
+follow from $0<Q<1/2$. Strict slack follows either from the perturbation
+and forward map, or the explicit intervals; realization proves its
+reverse direction. For $q\leq9/16$, every $r\in(0,q)$ is in the
+range of Theorem~\ref{thm:allorders}.
+\end{proof}
+
+\begin{corollary}[Relative closure and endpoint meaning]\label{cor:closure}
+In $I=(0,1)$, the analytic feasible set $[Q,1)$ is the relative closure
+of the polynomial feasible set $(Q,1)$. At $Q$ all $H_N(Q)$ are feasible,
+but no original polynomial witness exists. No endpoint factors can extend
+nonvanishingly to a disc of radius $R>1$.
+\end{corollary}
+\begin{proof}
+The set and hierarchy assertions follow from the preceding theorems.
+If endpoint factors extended as stated, their identity would extend by
+the identity theorem, and $Rz\,u(Rz)$ would belong to
+$\F_{\sqrt Q/R}$, contradicting $Q=\inf\T$. Open-disc analytic
+attainment therefore does not supply a closed-disc polynomial certificate.
+The closure in $\R$ instead includes $1$, corresponding to $\delta=0$
+outside the original domain. In $(0,\infty)$ the original set has
+relative closure $(0,\Delta]$.
+\end{proof}
+
+\section{Exactness, computability, and non-stabilization}\label{sec:discussion}
+\subsection{No finite level stabilizes at the threshold}
+Put $S_N=\{q\in[0,1/2]:H_N(q)\}$ and $\alpha_N=\min S_N$.
+\begin{theorem}[Strict finite-level non-stabilization]\label{thm:nonstable}
+Each $S_N$ is nonempty compact semialgebraic and $\alpha_N$ is an
+effectively computable real algebraic number. Moreover
+\begin{equation}\label{eq:nonstable}
+ 0<\alpha_N<Q,\qquad \alpha_N\uparrow Q,\qquad
+ \forall N\ \exists M>N:\ \alpha_M>\alpha_N.
+\end{equation}
+For every fixed $N$ there is $\varepsilon_N>0$ such that $H_N(q)$
+holds whenever $|q-Q|<\varepsilon_N$. The neighborhood can be chosen
+inside the defined parameter range.
+\end{theorem}
+\begin{proof}
+The joint constraints in $q$ and the finite coefficient box are closed
+and bounded, so their projection is compact. The seed at $1/2$ makes
+$S_N$ nonempty. Quantifier elimination and real-root isolation give its
+algebraic minimum effectively. The zeroth equation gives
+$\alpha_N\geq1/C_0>0$.
+Restriction gives $S_{N+1}\subseteq S_N$. All-orders realization and the
+analytic interval give $\bigcap_NS_N=[Q,1/2]$. If $\alpha$ is the
+increasing limit of the minima, then for each fixed $N$ its tail lies
+in the closed set $S_N$, so $\alpha\in S_N$. Hence $\alpha=Q$.
+
+For strictness, take endpoint factors $u_*,v_*,U_*,V_*$. The four
+positive individual bounds in~\eqref{eq:fourbounds} each lie strictly
+below their sum used in $M(r)$. Cauchy's estimate and the finite minimum
+in~\eqref{eq:boxes} therefore give strict inequalities for each true
+coefficient: $|u_{*,j}|,|v_{*,j}|,|U_{*,j}|,|V_{*,j}|<C_j$.
+For $q$ near $Q$ define analytic germs at zero by
+\[
+ v_q=v_*+1/q-1/Q,\qquad u_q=\frac{1-(z^2+q)v_q}{z}.
+\]
+The quotient is removable, $v_q(0)=1/q$, and
+$u_q(0)=(q/Q)u_*(0)\ne0$. Their inverses are holomorphic germs, whose
+every fixed finite collection of coefficients depends continuously on
+$q$. The three identities hold for the germs. At $Q$ the finitely many
+box constraints have strict margin, so continuity keeps them inside
+their boxes on some neighborhood. Thus $H_N$ has feasible points below
+$Q$, proving $\alpha_N<Q$. Convergence then forces a later strict
+increase for every fixed $N$.
+\end{proof}
+The germs in this proof need not have zero-free inverses on the whole
+disc. No single $\varepsilon$ or infinite box control is asserted.
+One can also search effectively for a later $H_M(\alpha_N)$ that is
+infeasible, using exact real-algebraic input representation and the
+all-orders obstruction. Non-stabilization does not affect the precision
+algorithm, and asserts nothing about other possible formulas for $Q$.
+
+\subsection{Exact determination and limits of membership algorithms}
+The unique interval-intersection definition of $Q$ uses the complete
+specified program and its proved convergence, not a finite decimal
+approximation. Together with both directions of~\eqref{eq:main} and
+the independent endpoint exclusion, it determines the original feasible
+set exactly. Absence of a closed form, an algebraicity result, or a useful
+complexity bound does not weaken these statements.
+The computed brackets transform to
+\[
+ \frac{1-R_j}{1+R_j}<\Delta<\frac{1-L_j}{1+L_j},\qquad
+ \frac{1-L_j}{1+L_j}-\frac{1-R_j}{1+R_j}
+ =\frac{2(R_j-L_j)}{(1+L_j)(1+R_j)}\leq2(R_j-L_j).
+\]
+One extra bit of strict precision for $Q$ suffices for any requested
+strict precision for $\Delta$.
+
+For an effectively given real input promised different from $\Delta$,
+successively refining the input and threshold intervals eventually
+decides the strict comparison. For rational $\delta>0$, $\delta\geq1$
+is impossible and $\delta\leq1/3$ is feasible. In the remaining range
+the rational transform lies in $(0,1/2)$ and the two certificate searches
+decide all nonendpoint inputs. The parameter explicitly specified as
+$\Delta$ is infeasible by the endpoint theorem. No irrationality of
+$Q$ or $\Delta$ is claimed, and no total rational-input membership
+algorithm at a potentially rational endpoint is asserted.
+
+This must be distinguished from the unconditional totality of the
+precision algorithm: every precision input terminates, with no
+nonendpoint promise. A general algorithm deciding membership from an
+arbitrary black-box real Cauchy name would face the discontinuity of the
+interval characteristic function at its endpoint; it is not a conclusion
+of this paper. The exact interval theorem and endpoint exclusion do not
+require such an equality detector.
+
+\section{Scope and limitations}\label{sec:scope}
+Here \emph{exact algorithmic solution} means a complete feasible-set theorem
+together with arbitrary prescribed precision, strict rational enclosures,
+and proved correctness and finite termination of the precision procedure.
+It does not mean a closed form. No algebraicity, minimal polynomial,
+special-function closed form, practical complexity bound, fixed finite
+truncation deciding $Q$, or generic finite-time black-box equality test
+$q=Q$ is claimed. No efficient numerical implementation or benchmarked
+approximation of $Q$ is supplied in this release. A precision algorithm
+and a total endpoint-equality decision procedure are different assertions.
+
+\section{Formal verification and reproducibility}\label{sec:formalcoverage}
+The \href{https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init}{public repository}
+contains the source, verification scripts and tagged release.
+The release identifier is \texttt{v1.0.0-proof-candidate}. It uses Lean 4.33.0
+and Mathlib 4.33.0 (the dependency commit is pinned in
+\texttt{lake-manifest.json}). The concrete main declaration is
+\begin{center}\small
+\path{BelgianChocolate.belgianChocolate_exact_algorithmic_solution}
+\end{center}
+in \texttt{BCPThreshold/FinalMain.lean}. Its statement has no pending
+analytic, certificate, endpoint, or realization-interface hypothesis.
+The exact parameter sets, endpoint separation, all-orders equivalence
+on $0<q\le9/16$, and arbitrary-precision enclosure assertion are included.
+
+This verifies the main conclusion and its actual Lean dependency graph,
+not every paper assertion verbatim. The coefficient proof uses the proved
+coarse Schottky/cosine-lift development rather than the displayed Hempel
+density theorem, reaching the same boxes $C_j$. The negative search uses
+finite compact-polynomial infeasibility certificates with proved completeness,
+not formalized general CAD. The positive verifier also uses finite polynomial
+data. These implement the same two-sided mechanism but need not reproduce
+the stage-by-stage outputs of Section~\ref{sec:algorithm}; their strict
+brackets identify the same real $Q$.
+
+The fixed-level algebraic-minimum and non-stabilization discussion of
+Section~\ref{sec:discussion} is a paper-level result; it is not a separately
+exported theorem of this Lean release, and is not needed by the final Lean
+main theorem. The total mathematical iterator uses \texttt{Nat.find} and
+is marked \texttt{noncomputable}; its finite-prefix searches are executable,
+and their finite success and the iteration bounds are proved. No separate
+native threshold-computation application is claimed.
+
+The main theorem and concrete interface bundle have only
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}
+as transitive axiom dependencies. The BCP source has no project axiom
+declarations or proof holes. Modeling fidelity still requires human review.
+
+With \texttt{elan}, Git, Python 3 and Bash installed, clone the repository,
+run \texttt{lake exe cache get}, then \texttt{./verify\_bcp.sh}.
+The script builds the library and every BCP module, runs the final transitive
+axiom audit, and checks source for proof holes and axiom declarations.
+The verification guide gives the exact commands and the short reviewer
+route. Build warnings about style or deprecated APIs are not proof failures.
+
+\section{AI assistance and independent review}
+AI models assisted mathematical exploration, route search, adversarial
+review, proof engineering, and Lean formalization. The manuscript and Lean
+source are made public for independent examination. Kernel checking does
+not replace human review of the modeling choices, mathematical exposition,
+novelty, or scope of the claim. Independent verification by control-theory,
+complex-analysis, and formal-methods experts is actively requested.
+
+\end{document}

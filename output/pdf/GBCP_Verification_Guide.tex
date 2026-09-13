@@ -1,0 +1,217 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=20mm]{geometry}
+\usepackage{amsmath,amssymb,array,xcolor,enumitem}
+\definecolor{ink}{RGB}{24,49,72}
+\usepackage[colorlinks=true,allcolors=ink,breaklinks=true]{hyperref}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}
+\setlength{\emergencystretch}{3em}
+\setlist{nosep,leftmargin=1.4em}
+\newcommand{\repo}{https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init}
+\newcommand{\decl}[1]{{\small\texttt{#1}}}
+\newcommand{\itemhead}[2]{\par\medskip\textbf{#1. #2}\par}
+\begin{document}
+{\LARGE\color{ink}Belgian Chocolate Problem}\\[4pt]
+{\Large Verification Guide}\\[5pt]
+Xuandi Cheng \hfill Proof candidate v1.0.0 --- 13 September 2026
+
+\section*{1. Claim and conventions}
+The original problem asks which $\delta>0$ admit nonzero real polynomials
+$x,y,p$, all strictly Hurwitz stable, such that
+\[
+p(s)=(s^2-2\delta s+1)x(s)+(s^2-1)y(s),\qquad \deg y\le\deg x.
+\]
+Strictly stable means every complex root has negative real part;
+nonzero constants are allowed, and no degree or leading-sign normalization
+is imposed. Put $q=(1-\delta)/(1+\delta)$ and
+$\delta(q)=(1-q)/(1+q)$. Write $P(q)$ for original polynomial feasibility.
+For $0<q<1$, $A(q)$ means that a real-symmetric holomorphic function on the
+unit disc has exactly the simple zero $0$ and exactly the simple $1$-points
+$\pm i\sqrt q$.
+
+The concrete real $Q=\texttt{analyticQ}$ is the infimum of the analytic
+feasible parameters. The main theorem proves $0<Q<1/2$ and
+\[
+ A(q)\iff Q\le q,\qquad P(q)\iff Q<q\quad(0<q<1).
+\]
+Consequently $\mathcal A=(0,\Delta)$, where $\Delta=(1-Q)/(1+Q)$, and
+$\Delta\notin\mathcal A$. For every natural precision $m$, a certified
+finite search yields rational $L,R$ with
+\[
+L<Q<R,\qquad R-L<2^{-m}.
+\]
+No test deciding whether an arbitrary input equals $Q$ is required.
+
+\section*{2. Actual dependency structure}
+The arrows below indicate mathematical dependencies, not a chronological
+research narrative.
+\begin{center}\small
+\begin{tabular}{c}
+Original polynomial witness $\longrightarrow$ analytic witness\\
+$\downarrow$\\
+Four zero-free analytic factors and explicit uniform coefficient boxes\\
+$\downarrow$\\
+$A(q)\ \Longleftrightarrow\ \forall N\,H_N(q)$, on $0<q\le9/16$\\
+$\downarrow$\\
+Compactness/threshold attainment + finite positive/negative certificates\\
+$\downarrow$\\
+Concrete two-test-point search and certified enclosures of $Q$
+\end{tabular}
+\end{center}
+Two additional branches are essential. Strict analytic slack, Module 3
+approximation, and finite Cayley homogenization give a true
+\texttt{OriginalWitness}. Independently, original-polynomial strict
+improvement plus the forward map excludes the polynomial endpoint.
+The parameter bound $\delta<1$ is proved directly from original witnesses.
+These branches combine with the analytic threshold to give the original
+feasible-set theorem. The algorithm does \emph{not} itself imply endpoint
+exclusion.
+
+\section*{3. What the release does not claim}
+No closed form, algebraicity, minimal polynomial, special-function expression,
+practical complexity guarantee, fixed-$N$ threshold criterion, or generic
+black-box equality detector is asserted. Independent expert validation is
+requested; kernel verification does not establish novelty or community acceptance.
+
+\newpage
+\begingroup\small\raggedright
+\setlength{\parskip}{2pt}
+\renewcommand{\itemhead}[2]{\par\smallskip\textbf{#1. #2}\par}
+\section*{4. Ten high-value checkpoints}
+All names below are actual declarations. Unless a longer prefix is shown,
+their namespace is \texttt{BelgianChocolate}; paths are relative to the repository.
+
+\itemhead{1}{Original polynomial to analytic}
+For $0<q<1$, $P(q)\Rightarrow A(q)$, including every actual-degree case.\\
+\decl{polynomialFeasible\_implies\_analyticFeasible}\\
+\path{BCPThreshold/PolynomialToAnalytic.lean}. Role: the necessary direction.
+
+\itemhead{2}{Uniform all-functions coefficient bounds}
+For $0<q\le(3/4)^2$, every factor coefficient has norm at most the explicit
+rational $C_j$, independently of the function and truncation order.\\
+\decl{Schottky.coefficientBound}\\
+\path{BCPThreshold/CoefficientBounds.lean}. Role: a common compact box.
+
+\itemhead{3}{Both directions of all-orders realization}
+For $0<q\le9/16$, $A(q)\iff\forall N\,H_N(q)$; the reverse direction
+constructs compatible infinite coefficients, convergent series, and exact identities.\\
+\decl{analyticFeasible\_iff\_real\_all\_levels}\\
+\path{BCPThreshold/FinalMain.lean}; implementation:
+\decl{Route1.RealAllOrders.allOrders\_realization} and
+\decl{Route1.RealAllOrders.analyticFeasible\_all\_levels}, in
+\path{BCPThreshold/RealAllOrdersRealization.lean}.
+For rational input the matching declaration is
+\decl{Route1.AllOrders.analyticFeasible\_iff\_allOrders}.
+
+\itemhead{4}{Positive certificate existence}
+If $0<r<q<1$, $q$ is rational, and $A(r)$, a genuine finite rational
+polynomial certificate exists; exact identity and strict margin are preserved.\\
+\decl{strictAnalyticFeasible\_positiveCertificate}\\
+\path{BCPThreshold/RationalPositiveCertificate.lean}.
+
+\itemhead{5}{Negative finite-search completeness}
+If some rational-parameter finite level is infeasible, some finite stage
+of the actual Boolean search succeeds. Soundness is separately proved.\\
+\decl{Route1.TrueHierarchy.hierarchyNegative\_complete}\\
+\path{BCPThreshold/RCFRoute1/TrueHierarchy.lean}.
+
+\itemhead{6}{Algorithm termination and strict precision}
+Distinct trisection points ensure finite success without deciding equality
+to $Q$; iterations preserve strict brackets and contract by $2/3$.\\
+\decl{ThresholdData.precisionInterval\_correct}\\
+\path{BCPThreshold/CertifiedAlgorithm.lean}; concrete realization:
+\decl{analyticThresholdData} in \path{BCPThreshold/ConcreteAnalyticCertificates.lean}.
+
+\itemhead{7}{Strict-slack original realization}
+$0<r<q<1$ and $A(r)$ imply $P(q)$, via real polynomial Cayley
+homogenization with exact identity and actual degree.\\
+\decl{strictSlackRealization}\\
+\path{BCPThreshold/StrictSlackRealization.lean}.
+
+\itemhead{8}{Original strict improvement}
+For $0<q<1$, a polynomial witness yields one at some $0<q'<q$.
+Affine substitution/coefficient mixing handles leading cancellation.\\
+\decl{polynomialFeasible\_strict\_improvement}\\
+\path{BCPThreshold/PolynomialStrictImprovement.lean}.
+
+\itemhead{9}{Endpoint separation}
+$A(Q)$ but $\neg P(Q)$; exclusion depends on checkpoint 8, not on
+an infimum definition alone.\\
+\decl{endpoint\_separation}\\
+\path{BCPThreshold/EndpointFormalization.lean}.
+
+\itemhead{10}{Concrete original-problem main theorem}
+Combines all parameter ranges, the original feasible interval, the endpoint,
+the real hierarchy, and arbitrary-precision rational enclosures.\\
+\decl{belgianChocolate\_exact\_algorithmic\_solution}\\
+\path{BCPThreshold/FinalMain.lean}. No pending interface is a premise.
+
+\par\endgroup
+\newpage
+\section*{5. Reproduce the release}
+Install Git, \texttt{elan}, Python 3 and Bash (Git Bash on Windows).
+Lean 4.33.0 is selected by \texttt{lean-toolchain}; Mathlib 4.33.0 is pinned
+to commit \texttt{db584cd6d46c92f209a44c0f1c829460d327499d}.
+\begin{quote}\footnotesize\ttfamily
+git clone \textbackslash\\
+\url{https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init.git}\\
+cd belgian-chocolate-problem-lean-proof-20260910210030-init\\
+git checkout v1.0.0-proof-candidate\\
+lake exe cache get\\
+./verify\_bcp.sh\\
+lake build BCPThreshold
+\end{quote}
+The cache command obtains compiled dependencies; it does not replace project
+proof checking. The script builds all BCP modules serially in dependency order,
+including standalone audits, then the root and \texttt{FinalAudit.lean}.
+It exits on failure. The last explicit build is an optional recheck.
+Expected final output is \texttt{BCP FORMAL VERIFICATION: PASS}.
+
+The checked local source has 57 Lean files including the root, and the audit
+examines 1,551 imported project declarations. The source scan reports
+\texttt{ZERO\_SORRY\_CHECK=PASS} and
+\texttt{PROJECT\_AXIOM\_DECLARATIONS=NONE}. For the main theorem,
+\texttt{\#print axioms} reports only
+\[
+\texttt{[propext, Classical.choice, Quot.sound]}.
+\]
+\texttt{FinalAudit.lean} checks the required names are real theorem declarations
+and rejects unexpected transitive axioms, including dependencies hidden through
+private declarations. Logs are written under \path{.lake/bcp-verification/}.
+Nonfatal linter/deprecation warnings may remain.
+
+\section*{6. Review routes}
+\textbf{Control theory.} Begin with \path{BCPThreshold/Definitions.lean}.
+Check the original quantifiers, strict stability, parameter inverses,
+forward Cayley map, strict-slack reverse construction, and actual-degree
+handling in endpoint improvement. In particular do not replace the original
+problem by a controller class with extra structural assumptions.
+
+\textbf{Complex analysis.} Inspect the literal \texttt{DiscFunction} definition,
+the four-factor equivalence, uniformity of coefficient bounds, and the
+compact realization. Pay special attention to compatible coefficients,
+convergence on the full open disc, inverse identities, and simple prescribed
+fibres. Lean proves the coefficient estimate by the coarse Schottky/cosine-lift
+route; the paper gives a classical Hempel-density argument.
+
+\textbf{Lean/formal methods.} Start at \path{BCPThreshold/FinalMain.lean} and
+\path{BCPThreshold/FinalAudit.lean}. Follow the concrete interface bundle,
+check there is no realization assumption, and reproduce the audit from the
+tagged source. The original \texttt{Admissible} definition is the primary
+modeling checkpoint, not just the final theorem's name.
+
+\section*{7. Important coverage boundary}
+The main theorem and its actual dependency graph are checked; the release
+does not claim a line-for-line formalization of every paper assertion.
+General CAD and the displayed Hempel density theorem are not assumed as
+project axioms: Lean uses separately proved alternative mechanisms.
+The paper's algebraic-minimum/non-stabilization discussion is not a separately
+exported Lean theorem. Finite searches are executable and their success is proved;
+the total mathematical iterator uses \texttt{Nat.find} and remains
+\texttt{noncomputable}. No standalone native threshold calculator is supplied.
+
+AI models assisted exploration, adversarial review, proof engineering and
+formalization. Independent verification is actively requested. Access the
+\href{\repo}{repository},
+\href{\repo/releases/tag/v1.0.0-proof-candidate}{tagged release}, and
+\href{\repo/issues}{review/contact channel}.
+\end{document}

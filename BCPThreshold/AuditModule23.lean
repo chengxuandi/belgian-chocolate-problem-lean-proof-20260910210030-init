@@ -1,0 +1,14 @@
+import BCPThreshold.PolynomialToAnalytic
+import BCPThreshold.RationalPositiveCertificate
+
+open BelgianChocolate
+
+#print axioms polynomialFeasible_implies_analyticFeasible
+#print axioms polynomialToAnalyticStatement
+#print axioms exists_real_polynomial_uniform_approx
+#print axioms exists_rat_polynomial_uniform_approx_real
+#print axioms exists_rat_polynomial_uniform_approx
+#print axioms strictU_zero_free
+#print axioms strictV_zero_free
+#print axioms strictAnalyticFeasible_positiveCertificate
+#print axioms strictAnalyticFeasible_executable_positive

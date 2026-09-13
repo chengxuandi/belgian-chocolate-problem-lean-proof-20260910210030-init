@@ -1,0 +1,80 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[margin=18mm]{geometry}
+\usepackage{amsmath,amssymb,xcolor,enumitem}
+\definecolor{ink}{RGB}{24,49,72}
+\usepackage[colorlinks=true,allcolors=ink,breaklinks=true]{hyperref}
+\setlength{\parindent}{0pt}\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{3em}
+\setlist{nosep,leftmargin=1.4em}
+\pagestyle{empty}
+\newcommand{\repo}{https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init}
+\begin{document}
+{\LARGE\color{ink}Belgian Chocolate Problem}\\[4pt]
+{\Large A Proposed Exact Algorithmic Solution}\\[6pt]
+Xuandi Cheng \hfill Proof candidate v1.0.0 --- 13 September 2026
+
+\textbf{The problem.}
+Determine all $\delta>0$ for which nonzero real polynomials $x,y,p$ exist with
+every root strictly in the left half-plane, $\deg y\le\deg x$, and
+\[
+p(s)=(s^2-2\delta s+1)x(s)+(s^2-1)y(s).
+\]
+No bound on degree or special factorization is imposed. Nonzero constants
+are permitted. This is the polynomial simultaneous-stabilization formulation.
+
+\textbf{Main result.}
+Set $q=(1-\delta)/(1+\delta)$. The candidate identifies a real
+$Q\in(0,1/2)$ through a certified, terminating arbitrary-precision algorithm:
+for each natural $m$, it returns rational $L,R$ with
+\[
+L<Q<R,\qquad R-L<2^{-m}.
+\]
+Writing $\Delta=(1-Q)/(1+Q)$, the original feasible set is exactly
+$\mathcal A=(0,\Delta)$, and $\Delta$ is infeasible.
+For $0<q<1$, analytic feasibility is $Q\le q$, whereas original polynomial
+feasibility is $Q<q$. The analytic endpoint is attained; the polynomial
+endpoint is independently excluded.
+
+\textbf{Core mechanism.}
+The analytic class consists of real-symmetric holomorphic functions on the
+unit disc with exactly the simple zero $0$ and the two simple $1$-points
+$\pm i\sqrt q$. Explicit uniform four-factor coefficient bounds yield
+\[
+\text{analytic feasibility}\ \Longleftrightarrow\
+\text{every finite semialgebraic level }H_N(q)\text{ is feasible}
+\quad(0<q\le9/16).
+\]
+Compactness supplies compatible infinite coefficients and exact analytic
+identities. Finite negative obstructions and finite rational positive
+certificates give searches on both strict sides. Two distinct trisection
+points prevent endpoint equality from blocking termination.
+Strict-slack polynomial realization and an actual-degree-preserving
+perturbation complete the original interface.
+
+\textbf{Formal verification.}
+Lean 4.33.0 / Mathlib 4.33.0. The concrete main theorem is\\
+{\small\ttfamily BelgianChocolate.belgianChocolate\_exact\_algorithmic\_solution}\\
+in \path{BCPThreshold/FinalMain.lean}. The main theorem has no pending
+mathematical-interface hypothesis. The build and audit pass with zero proof
+holes and no project-defined axioms; its transitive axioms are
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}.
+Run \texttt{lake exe cache get} and \texttt{./verify\_bcp.sh} from the release.
+This verifies the main conclusion and its dependency graph, not every
+paper assertion verbatim. Finite scans are executable; the mathematical
+iterator uses noncomputable \texttt{Nat.find}.
+
+\textbf{Scope and review request.}
+No closed form, algebraicity, minimal polynomial, special-function formula,
+practical complexity bound, fixed-$N$ decision, or black-box equality test
+$q=Q$ is claimed. No native threshold calculator is supplied.
+AI models assisted exploration, adversarial review and Lean engineering.
+Independent verification, especially of the original formulation and the
+analytic/polynomial interface, is actively requested.
+
+\textbf{Links.}\quad
+\href{\repo/blob/v1.0.0-proof-candidate/output/pdf/GBCP_Final_Manuscript.pdf}{Paper}\quad
+\href{\repo}{GitHub}\quad
+\href{\repo/releases/tag/v1.0.0-proof-candidate}{Release}\quad
+\href{\repo/issues}{Contact / independent review}\\
+{\footnotesize\url{https://github.com/chengxuandi/belgian-chocolate-problem-lean-proof-20260910210030-init}}
+\end{document}

@@ -1,0 +1,11 @@
+import BCPThreshold.AnalyticThreshold
+import BCPThreshold.HierarchyClosedness
+
+#print axioms BelgianChocolate.analyticFeasible_one_third
+#print axioms BelgianChocolate.analyticQ_le_of_feasible
+#print axioms BelgianChocolate.analyticQ_pos
+#print axioms BelgianChocolate.negative_complete_at_analyticQ
+#print axioms BelgianChocolate.positive_complete_at_analyticQ
+#print axioms BelgianChocolate.Route1.RealHierarchy.H_rat_iff
+#print axioms BelgianChocolate.Route1.RealHierarchy.H_parameter_closed
+#print axioms BelgianChocolate.Route1.RealHierarchy.H_parameter_limit
