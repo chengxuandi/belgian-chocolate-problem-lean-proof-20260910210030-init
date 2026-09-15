@@ -1,11 +1,49 @@
-# An Exact Algorithmic Solution of the Belgian Chocolate Problem
+# Status clarification
+
+This repository does **not** constitute a complete solution of the Generalized Belgian Chocolate Problem.
+
+Classical theory establishes the existence of a threshold \(\delta^*\) separating admissible and inadmissible parameters. The unresolved problem is to determine \(\delta^*\) itself.
+
+The work preserved here investigated an effective / computability-oriented refinement of that threshold structure, including:
+
+- an attempted certified approximation framework;
+- all-orders finite semialgebraic constructions;
+- endpoint analysis;
+- Lean formalization of parts of the framework.
+
+After further literature review and external feedback, the original claim “Exact Algorithmic Solution of the Belgian Chocolate Problem” is withdrawn. The correct interpretation is:
+
+> an experimental study of the computability / effective characterization of the Belgian Chocolate threshold, not a complete determination of \(\delta^*\).
+
+## 状态说明
+
+本仓库**不构成广义 Belgian Chocolate Problem 的完整解决**。
+
+已有经典理论已经证明存在临界值 \(\delta^*\)：
+
+- \(\delta < \delta^*\) 时可行；
+- \(\delta > \delta^*\) 时不可行。
+
+真正的开放问题是确定 \(\delta^*\) 本身。本仓库原工作的实际意义更接近于 threshold structure 的有效化 / 可计算性探索、全次数有限半代数层级、端点性质分析和部分 Lean 形式化。此前使用的 “Exact Algorithmic Solution” 表述过强，现予以撤回。
+
+> For the separate project on a concrete certified improvement of the admissible lower bound, see [belgian-chocolate-certified-lower-bound](https://github.com/chengxuandi/belgian-chocolate-certified-lower-bound).
+
+两个项目逻辑独立：本仓库保存 computability / formalization investigation；新仓库保存 explicit finite lower-bound certificate。
+
+## Historical manuscript
+
+The manuscript, Lean files and PDFs below are preserved for transparency and reproducibility. Their original title and claim should not be interpreted as the current status of the project. Formalized components may retain independent research value, but the historical manuscript is not a determination of the threshold and should not be cited as a complete solution.
+
+# Historical manuscript: An Exact Algorithmic Solution of the Belgian Chocolate Problem
 
 This repository contains the Lean 4 formalization and reproducibility artifacts
 for a **proposed exact algorithmic solution** of the Belgian Chocolate Problem.
 Author: **Xuandi Cheng**. Release: `v1.0.0-proof-candidate`.
 Independent verification is actively requested; external acceptance is not claimed.
 
-## Main Result
+## Historical claim (withdrawn)
+
+The section below records the historical proof-candidate claim and its artifacts. It is preserved unchanged in substance so that the repository history remains auditable; the current status is the clarification above.
 
 Determine all `δ > 0` admitting nonzero real polynomials `x,y,p`, all strictly
 Hurwitz stable, with `deg y ≤ deg x` and
